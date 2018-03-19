@@ -46,6 +46,8 @@ out/
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
+*.iml
+target
 
 # JIRA plugin
 atlassian-ide-plugin.xml
@@ -55,4 +57,5 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
-
+/.gitignore
+/allure-results/
