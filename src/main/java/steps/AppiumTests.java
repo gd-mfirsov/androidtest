@@ -9,7 +9,9 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import pages.GoogleFitPage;
 import pages.LoginPage;
+import pages.SelectCaloriePage;
 import pages.UpdateProfilePage;
 import pages.helpers.LoginHelper;
 
@@ -24,10 +26,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Feature("Appium final test competition")
 public class AppiumTests {
 
-    private static AndroidDriver<AndroidElement> androidDriver;
+    private static AndroidDriver androidDriver;
     private LoginPage loginPage;
     private UpdateProfilePage profilePage;
     private LoginHelper loginHelper;
+    private SelectCaloriePage caloriePage;
+    private GoogleFitPage googleFitPage;
 
     @BeforeMethod
     public void beforeMethod() throws MalformedURLException {
@@ -38,11 +42,13 @@ public class AppiumTests {
         capabilities.setCapability(MobileCapabilityType.PLATFORM_VERSION, "8.0");
         capabilities.setCapability(MobileCapabilityType.APP, app);
         capabilities.setCapability(MobileCapabilityType.DEVICE_NAME, "Android Emulator");
-        androidDriver = new AndroidDriver<AndroidElement>(new URL("http://localhost:4723/wd/hub"), capabilities);
+        androidDriver = new AndroidDriver(new URL("http://localhost:4723/wd/hub"), capabilities);
         androidDriver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
         loginPage = new LoginPage(androidDriver);
         profilePage = new UpdateProfilePage(androidDriver);
         loginHelper = new LoginHelper(androidDriver);
+        caloriePage = new SelectCaloriePage(androidDriver);
+        googleFitPage = new GoogleFitPage(androidDriver);
     }
 
     @AfterMethod
@@ -84,5 +90,24 @@ public class AppiumTests {
         assertThat(profilePage.getHeightText(), is("204.0 cm"));
         assertThat(profilePage.getWeightText(), is("85.0 kg"));
         assertThat(profilePage.getGoalWeightText(), is("80.0 kg"));
+    }
+
+    @Test(description = "")
+    public void test() {
+        loginPage.clickLoginViaEmail();
+        loginHelper.performLogin("chose@bk.ru", "jva6gn45n");
+        profilePage.clickNext();
+
+        assertThat(caloriePage.getCountOfCalorieCards(), is(5));
+
+        caloriePage.clickOnSpecifiedCard("Moderate");
+        profilePage.clickNext();
+
+        assertThat(googleFitPage.getTitleText(), is("Connect With Google Fit"));
+        assertThat(googleFitPage.getDescText(), is("Connecting with Google Fit allows you to automatically " +
+                "add your calories burned through walking, biking and running."));
+
+        googleFitPage.clickSkip();
+
     }
 }
