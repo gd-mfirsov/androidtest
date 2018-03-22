@@ -38,7 +38,7 @@ public class UpdateProfilePage {
     private WebElement nextButton;
     @AndroidFindBy(xpath = "//android.widget.TextView")
     private List<WebElement> options;
-    @AndroidFindBy(className = "android.widget.TextView")
+    @AndroidFindBy(className = "android.widget.ListView")
     private WebElement listVew;
 
     public UpdateProfilePage(AppiumDriver driver) {

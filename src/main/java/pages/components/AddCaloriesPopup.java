@@ -8,7 +8,7 @@ import org.openqa.selenium.WebElement;
 import pages.AbstractPage;
 
 public class AddCaloriesPopup extends AbstractPage {
-    AddCaloriesPopup(AppiumDriver driver) {
+    public AddCaloriesPopup(AppiumDriver driver) {
         super(driver);
     }
 
