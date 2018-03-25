@@ -9,6 +9,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import pages.DialogHelper;
 import pages.MainPage;
 import pages.ProductPage;
 
@@ -26,6 +27,7 @@ public class AppiumTests {
     private static AndroidDriver androidDriver;
     private MainPage mainPage;
     private ProductPage productPage;
+    private DialogHelper dialogHelper;
 
     @BeforeClass
     public void beforeMethod() throws MalformedURLException {
@@ -36,10 +38,13 @@ public class AppiumTests {
         capabilities.setCapability(MobileCapabilityType.PLATFORM_VERSION, "8.0");
         capabilities.setCapability(MobileCapabilityType.APP, app);
         capabilities.setCapability(MobileCapabilityType.DEVICE_NAME, "Android Emulator");
+        capabilities.setCapability("unicodeKeyboard", true);
+        capabilities.setCapability("resetKeyboard", true);
         androidDriver = new AndroidDriver(new URL("http://localhost:4723/wd/hub"), capabilities);
         androidDriver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
         mainPage = new MainPage(androidDriver);
         productPage = new ProductPage(androidDriver);
+        dialogHelper = new DialogHelper(androidDriver);
     }
 
     @AfterClass
@@ -52,7 +57,7 @@ public class AppiumTests {
         androidDriver.resetApp();
     }
 
-    @Test(description = "Add Shopping List with few products", enabled = false)
+    @Test(description = "Add Shopping List with few products")
     public void addNewShoppingList() {
         mainPage.addNewBuyList("Dummy one");
 
@@ -66,8 +71,8 @@ public class AppiumTests {
 
         assertThat(productPage.getCountOfItems(), is(1));
         assertThat(productPage.getTotal(), containsString(Double.toString(64.95)));
-        assertThat(productPage.getSpecifiedItemAmount("milk"), containsString(Integer.toString(5)));
-        assertThat(productPage.getSpecifiedItemCost("milk"), containsString(Double.toString(12.99)));
+        assertThat(productPage.getSpecifiedItemAmount("milk"), is(5.0));
+        assertThat(productPage.getSpecifiedItemCost("milk"), is(12.99));
         assertThat(productPage.getSpecifiedItemCommentText("milk"), is("This milk must be fresh"));
 
         productPage.setProductName("potato");
@@ -96,5 +101,96 @@ public class AppiumTests {
 
         assertThat(productPage.getCountOfItems(), is(0));
         assertThat(productPage.getTotal(), is("Total: 0 £"));
+    }
+
+    @Test(description = "Make some products as bought")
+    public void makeSomeProductsAsBought() {
+        mainPage.addNewBuyList("The second one");
+
+        productPage.setProductName("pasta");
+        productPage.setAmount(3);
+        productPage.setPrice(4.76);
+        productPage.clickAddProduct();
+
+        productPage.setProductName("bread");
+        productPage.setPrice(2.4);
+        productPage.setAmount(1.5);
+        productPage.clickAddProduct();
+
+        productPage.setProductName("salad");
+        productPage.setPrice(1.99);
+        productPage.setAmount(2);
+        productPage.selectAmountType("kg.");
+        productPage.clickAddProduct();
+
+        assertThat(productPage.getCountOfItems(), is(3));
+
+        productPage.setSpecifiedItemAsBought("bread");
+
+        assertThat(productPage.getCountOfItems(), is(3));
+    }
+
+    @Test(description = "Edit product without changes")
+    public void editProductWithoutChanges() {
+        mainPage.addNewBuyList("The third one");
+
+        productPage.setProductName("marshmallow");
+        productPage.setPrice(3.99);
+        productPage.setAmount(10);
+        productPage.selectAmountType("pack");
+        productPage.clickAddProduct();
+
+        productPage.editSpecifiedItem("marshmallow");
+
+        assertThat(productPage.getAmountAsDouble(), is(10.0));
+        assertThat(productPage.getPriceAsDouble(), is(3.99));
+
+        productPage.clickSaveButtonOnEditItem();
+
+        assertThat(productPage.getCountOfItems(), is(1));
+    }
+
+    @Test(description = "Change parameters while edit item")
+    public void editProduct() {
+        mainPage.addNewBuyList("The fourth one");
+
+        productPage.setProductName("carrot");
+        productPage.setPrice(2.99);
+        productPage.setAmount(10);
+        productPage.selectAmountType("kg.");
+        productPage.clickAddProduct();
+
+        productPage.editSpecifiedItem("carrot");
+        productPage.setAmount(8);
+        productPage.clickSaveButtonOnEditItem();
+
+        assertThat(productPage.getCountOfItems(), is(1));
+        assertThat(productPage.getSpecifiedItemCost("carrot"), is(2.99));
+        assertThat(productPage.getSpecifiedItemAmount("carrot"), is(8.00));
+    }
+
+    @Test(description = "Change parameters on edit page and click Back button")
+    public void discardChangesOnProduct() {
+        mainPage.addNewBuyList("The fifth one");
+
+        productPage.setProductName("cabbages");
+        productPage.setPrice(2.99);
+        productPage.setAmount(10);
+        productPage.selectAmountType("kg.");
+        productPage.clickAddProduct();
+
+        productPage.editSpecifiedItem("cabbages");
+        productPage.setAmount(12);
+        productPage.clickBackButton();
+
+        assertThat(dialogHelper.getDialogTitle(), is("Save"));
+        assertThat(dialogHelper.getDialogMessage(), is("Save current item?"));
+
+        dialogHelper.clickCancel();
+        mainPage.clickOnShoppingListByIndex(0);
+
+        assertThat(productPage.getCountOfItems(), is(1));
+        assertThat(productPage.getSpecifiedItemCost("cabbages"), is(2.99));
+        assertThat(productPage.getSpecifiedItemAmount("cabbages"), is(10.00));
     }
 }

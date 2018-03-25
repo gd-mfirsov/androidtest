@@ -114,13 +114,15 @@ public class ProductPage extends AbstractPage{
     }
 
     @Step
-    public String getSpecifiedItemCost(String itemName) {
-        return getSpecifiedItem(itemName).findElement(By.id("com.slava.buylist:id/textView1")).getText();
+    public double getSpecifiedItemCost(String itemName) {
+        return Double.parseDouble(getSpecifiedItem(itemName)
+                .findElement(By.id("com.slava.buylist:id/textView1")).getText().split(" ")[0]);
     }
 
     @Step
-    public String getSpecifiedItemAmount(String itemName) {
-        return getSpecifiedItem(itemName).findElement(By.id("com.slava.buylist:id/TextView01")).getText();
+    public double getSpecifiedItemAmount(String itemName) {
+        return Double.parseDouble(getSpecifiedItem(itemName)
+                .findElement(By.id("com.slava.buylist:id/TextView01")).getText().split(" ")[0]);
     }
 
     @Step
@@ -147,5 +149,35 @@ public class ProductPage extends AbstractPage{
         driver.findElement(By.xpath("//android.widget.TextView[@text='Remove']")).click();
         waitForVisibility(driver.findElement(MobileBy.xpath("//android.widget.Button[@text='YES']")));
         driver.findElement(By.xpath("//android.widget.Button[@text='YES']")).click();
+    }
+
+    @Step
+    public void editSpecifiedItem(String itemName) {
+        longPressOnSpecifiedItem(itemName);
+        waitForVisibility(driver.findElement(By.xpath("//android.widget.TextView[@text='Edit']")));
+        driver.findElement(By.xpath("//android.widget.TextView[@text='Edit']")).click();
+    }
+
+    @Step
+    public void setSpecifiedItemAsBought(String itemName) {
+        getSpecifiedItem(itemName).findElement(By.id("com.slava.buylist:id/imageView1")).click();
+    }
+
+    @Step
+    public void clickSaveButtonOnEditItem() {
+        waitForVisibility(addProductButton);
+        addProductButton.click();
+    }
+
+    @Step
+    public double getPriceAsDouble() {
+        waitForVisibility(priceTB);
+        return Double.parseDouble(priceTB.getText());
+    }
+
+    @Step
+    public double getAmountAsDouble() {
+        waitForVisibility(amountTB);
+        return Double.parseDouble(amountTB.getText());
     }
 }
