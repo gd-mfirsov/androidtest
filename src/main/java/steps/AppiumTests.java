@@ -5,37 +5,32 @@ import io.appium.java_client.remote.MobileCapabilityType;
 import io.appium.java_client.remote.MobilePlatform;
 import io.qameta.allure.Feature;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import pages.*;
-import pages.helpers.LoginHelper;
+import pages.MainPage;
+import pages.ProductPage;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
-@Feature("Appium final test competition")
+@Feature("Appium test for GridU")
 public class AppiumTests {
 
     private static AndroidDriver androidDriver;
-    private LoginPage loginPage;
-    private UpdateProfilePage profilePage;
-    private LoginHelper loginHelper;
-    private SelectCaloriePage caloriePage;
-    private GoogleFitPage googleFitPage;
     private MainPage mainPage;
-    private TrackFoodPage trackFoodPage;
+    private ProductPage productPage;
 
-    @BeforeMethod
+    @BeforeClass
     public void beforeMethod() throws MalformedURLException {
         File appDir = new File("src");
-        File app = new File(appDir, "MyPlate Calorie Tracker.apk");
+        File app = new File(appDir, "Shopping List.apk");
         DesiredCapabilities capabilities = new DesiredCapabilities();
         capabilities.setCapability(MobileCapabilityType.PLATFORM_NAME, MobilePlatform.ANDROID);
         capabilities.setCapability(MobileCapabilityType.PLATFORM_VERSION, "8.0");
@@ -43,87 +38,63 @@ public class AppiumTests {
         capabilities.setCapability(MobileCapabilityType.DEVICE_NAME, "Android Emulator");
         androidDriver = new AndroidDriver(new URL("http://localhost:4723/wd/hub"), capabilities);
         androidDriver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-        loginPage = new LoginPage(androidDriver);
-        profilePage = new UpdateProfilePage(androidDriver);
-        loginHelper = new LoginHelper(androidDriver);
-        caloriePage = new SelectCaloriePage(androidDriver);
-        googleFitPage = new GoogleFitPage(androidDriver);
         mainPage = new MainPage(androidDriver);
-        trackFoodPage = new TrackFoodPage(androidDriver);
+        productPage = new ProductPage(androidDriver);
     }
 
-    @AfterMethod
+    @AfterClass
     public void releaseDriver() {
         androidDriver.quit();
     }
 
-    @Test(description = "Check that all button are displayed", enabled = false)
-    public void checkThatButtonAreDisplayed() {
-        assertThat(loginPage.isFacebookButtonDisplayed(), is(true));
-        assertThat(loginPage.isLoginButtonDisplayed(), is(true));
-        assertThat(loginPage.isSignUpButtonDisplayed(), is(true));
+    @AfterMethod
+    public void resetApp() {
+        androidDriver.resetApp();
     }
 
-    @Test(description = "Update profile data", enabled = false)
-    public void checkLoginViaFacebook() {
-        loginPage.clickLoginViaEmail();
-        loginHelper.performLogin("chose@bk.ru", "jva6gn45n");
+    @Test(description = "Add Shopping List with few products", enabled = false)
+    public void addNewShoppingList() {
+        mainPage.addNewBuyList("Dummy one");
 
-        assertThat(profilePage.getGenderText(), is("Male"));
-        assertThat(profilePage.getBirthdayText(), is("Mar 19, 1993"));
-        assertThat(profilePage.getActivityText(), is("Sedentary"));
-        assertThat(profilePage.getHeightText(), is("6 ft 3 in"));
-        assertThat(profilePage.getWeightText(), is("209.44 lb"));
-        assertThat(profilePage.getGoalWeightText(), is("187.39 lb"));
+        assertThat(productPage.getCountOfItems(), is(0));
 
-        profilePage.clickGender();
-        profilePage.selectOption("Female");
-        profilePage.setBirthday("Jun", 12, 1998);
-        profilePage.clickActivity();
-        profilePage.selectOption("Moderately Active");
-        profilePage.setHeight("Centimeters", 204);
-        profilePage.setWeight("Kilograms", 85);
-        profilePage.setGoalWeight("Kilograms", 80);
+        productPage.setProductName("milk");
+        productPage.setPrice(12.99);
+        productPage.setAmount(5);
+        productPage.setComment("This milk must be fresh");
+        productPage.clickAddProduct();
 
-        assertThat(profilePage.getGenderText(), is("Female"));
-        assertThat(profilePage.getBirthdayText(), is("Jun 12, 1998"));
-        assertThat(profilePage.getActivityText(), is("Moderately Active"));
-        assertThat(profilePage.getHeightText(), is("204.0 cm"));
-        assertThat(profilePage.getWeightText(), is("85.0 kg"));
-        assertThat(profilePage.getGoalWeightText(), is("80.0 kg"));
+        assertThat(productPage.getCountOfItems(), is(1));
+        assertThat(productPage.getTotal(), containsString(Double.toString(64.95)));
+        assertThat(productPage.getSpecifiedItemAmount("milk"), containsString(Integer.toString(5)));
+        assertThat(productPage.getSpecifiedItemCost("milk"), containsString(Double.toString(12.99)));
+        assertThat(productPage.getSpecifiedItemCommentText("milk"), is("This milk must be fresh"));
+
+        productPage.setProductName("potato");
+        productPage.setAmount(100);
+        productPage.selectAmountType("kg.");
+        productPage.clickAddProduct();
+
+        assertThat(productPage.getCountOfItems(), is(2));
+        assertThat(productPage.getTotal(), containsString(Double.toString(64.95)));
+        assertThat(productPage.getSpecifiedItemCommentText("potato"), is(""));
     }
 
-    @Test(description = "Track calories on Breakfast")
-    public void test() {
-        loginPage.clickLoginViaEmail();
-        loginHelper.performLogin("chose@bk.ru", "jva6gn45n");
-        profilePage.clickNext();
-//        profilePage.clickNext();
+    @Test(description = "Add item in shopping list and then remove it")
+    public void removeItemFromShoppingList() {
+        mainPage.addNewBuyList("The first one");
 
-//        assertThat(caloriePage.getCountOfCalorieCards(), is(5));
+        assertThat(productPage.getCountOfItems(), is(0));
 
-        caloriePage.clickOnSpecifiedCard("Moderate");
-        profilePage.clickNext();
+        productPage.setProductName("icecream");
+        productPage.setAmount(2);
+        productPage.setPrice(4.99);
+        productPage.selectCategory("Frozen food");
+        productPage.clickAddProduct();
 
-        assertThat(googleFitPage.getTitleText(), is("Connect With Google Fit"));
-        assertThat(googleFitPage.getDescText(), is("Connecting with Google Fit allows you to automatically " +
-                "add your calories burned through walking, biking and running."));
+        productPage.deleteSpecifiedItem("icecream");
 
-        googleFitPage.clickSkip();
-
-        assertThat(mainPage.getCaloriesLeftText(), is(containsString("calories left")));
-        assertThat(mainPage.getConsumedCaloriesText(), is(0));
-        assertThat(mainPage.getBurnedCalorieText(), is(0));
-        assertThat(mainPage.getNetCalorieText(), is(0));
-
-        mainPage.clickAddButton();
-        mainPage.addCaloriesPopup.clickBreakfast();
-        trackFoodPage.clickMyFoodTab();
-        trackFoodPage.clickQuickAddCalories();
-        trackFoodPage.selectMeal("Breakfast");
-        trackFoodPage.setCalories(500);
-        trackFoodPage.clickDone();
-
-
+        assertThat(productPage.getCountOfItems(), is(0));
+        assertThat(productPage.getTotal(), is("Total: 0 £"));
     }
 }

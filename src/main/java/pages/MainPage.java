@@ -3,70 +3,71 @@ package pages;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 import io.qameta.allure.Step;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
-import pages.components.AddCaloriesPopup;
 
-public class MainPage extends AbstractPage {
+import java.util.List;
+
+public class MainPage extends AbstractPage{
     public MainPage(AppiumDriver driver) {
         super(driver);
-        addCaloriesPopup = new AddCaloriesPopup(driver);
     }
 
-    @AndroidFindBy(id = "com.livestrong.tracker:id/fab")
-    private WebElement addButton;
-    @AndroidFindBy(id = "com.livestrong.tracker:id/calorie_remaining")
-    private WebElement caloriesLeft;
-    @AndroidFindBy(id = "com.livestrong.tracker:id/tvConsumed")
-    private WebElement consumedCalorie;
-    @AndroidFindBy(id = "com.livestrong.tracker:id/tvBurned")
-    private WebElement burnedCalorie;
-    @AndroidFindBy(id = "com.livestrong.tracker:id/tvNet")
-    private WebElement netCalorie;
-    @AndroidFindBy(xpath = "//android.widget.ImageButton[@content-desc=\"Navigate up\"]")
+    @AndroidFindBy(id = "com.slava.buylist:id/button1")
     private WebElement menuButton;
-
-    public AddCaloriesPopup addCaloriesPopup;
+    @AndroidFindBy(id = "com.slava.buylist:id/button2")
+    private WebElement addNew;
+    @AndroidFindBy(id = "com.slava.buylist:id/editText1")
+    private WebElement textBox;
+    @AndroidFindBy(xpath = "//android.widget.ListView//android.widget.RelativeLayout")
+    private List<WebElement> shoppingLists;
+    @AndroidFindBy(id = "com.slava.buylist:id/title")
+    private WebElement shoppingListTitle;
+    @AndroidFindBy(id = "com.slava.buylist:id/imageView2")
+    private WebElement shoppingListEdit;
+    @AndroidFindBy(id = "com.slava.buylist:id/imageView1")
+    private WebElement shoppingListRemove;
 
     @Step
-    public String getCaloriesLeftText() {
-        waitForElementVisibility(caloriesLeft);
-        return caloriesLeft.getText();
+    public void addNewBuyList(String buyListName) {
+        waitForVisibility(textBox);
+        textBox.click();
+        textBox.sendKeys(buyListName);
+        addNew.click();
     }
 
     @Step
-    public int getLeftCaloriesAsInt() {
-        waitForElementVisibility(caloriesLeft);
-        String dummy = caloriesLeft.getText().split(" ")[0];
-        return Integer.parseInt(dummy);
+    public void clickOnSpecifiedShoppingList(String shoppingListName) {
+        shoppingLists.stream().filter(sh -> sh.findElement(By.id("com.slava.buylist:id/title"))
+                .getText().equals(shoppingListName)).findFirst().ifPresent(WebElement::click);
     }
 
     @Step
-    public int getConsumedCaloriesText() {
-        waitForElementVisibility(consumedCalorie);
-        return Integer.parseInt(consumedCalorie.getText());
+    public void clickOnShoppingListByIndex(int index) {
+        shoppingLists.get(index).click();
     }
 
     @Step
-    public int getBurnedCalorieText() {
-        waitForElementVisibility(burnedCalorie);
-        return Integer.parseInt(burnedCalorie.getText());
+    public void removeShoppingListByIndex(int index) {
+        shoppingLists.get(index).findElement(By.id("com.slava.buylist:id/imageView1")).click();
     }
 
     @Step
-    public int getNetCalorieText() {
-        waitForElementVisibility(netCalorie);
-        return Integer.parseInt(netCalorie.getText());
+    public void editShoppingListByIndex(int index) {
+        shoppingLists.get(index).findElement(By.id("com.slava.buylist:id/imageView2")).click();
     }
 
     @Step
-    public void clickAddButton() {
-        waitForElementToBeClikable(addButton);
-        addButton.click();
+    public String getShoppingListName() {
+        return shoppingLists.get(0).findElement(By.id("com.slava.buylist:id/title")).getText();
     }
 
     @Step
-    public void clickMenuButton() {
-        waitForElementToBeClikable(menuButton);
-        menuButton.click();
+    public void removeAllshoppingLists() {
+        shoppingLists.forEach(c -> {
+            c.findElement(By.id("com.slava.buylist:id/imageView1")).click();
+            waitForVisibility(driver.findElement(By.id("android:id/button1")));
+            driver.findElement(By.id("android:id/button1")).click();
+        });
     }
 }
