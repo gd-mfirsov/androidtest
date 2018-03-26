@@ -31,20 +31,8 @@ public class ProductPage extends AbstractPage{
     private WebElement amountTB;
     @AndroidFindBy(id = "com.slava.buylist:id/editText4")
     private WebElement commentTB;
-    @AndroidFindBy(xpath = "//android.widget.ListView[@resource-id=\"android:id/select_dialog_listview\"]" +
-            "//android.widget.CheckedTextView")
-    private List<WebElement> options;
-
     @AndroidFindBy(id = "com.slava.buylist:id/item")
     private List<WebElement> itemsList;
-    @AndroidFindBy(id = "com.slava.buylist:id/title")
-    private WebElement itemTitle;
-    @AndroidFindBy(id = "com.slava.buylist:id/str1")
-    private WebElement itemComment;
-    @AndroidFindBy(id = "com.slava.buylist:id/TextView01")
-    private WebElement itemAmount;
-    @AndroidFindBy(id = "com.slava.buylist:id/textView1")
-    private WebElement itemCost;
 
     @Step
     public void setProductName(String productName) {
@@ -179,5 +167,17 @@ public class ProductPage extends AbstractPage{
     public double getAmountAsDouble() {
         waitForVisibility(amountTB);
         return Double.parseDouble(amountTB.getText());
+    }
+
+    @Step
+    public void clickCopyItem(String itemName) {
+        longPressOnSpecifiedItem(itemName);
+        waitForVisibility(driver.findElement(By.xpath("//android.widget.TextView[@text='Copy']")));
+        driver.findElement(By.xpath("//android.widget.TextView[@text='Copy']")).click();
+    }
+
+    @Step
+    public String getNameOfFirstProduct() {
+        return itemsList.get(0).findElement(By.id("com.slava.buylist:id/title")).getText();
     }
 }

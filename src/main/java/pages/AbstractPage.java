@@ -20,7 +20,7 @@ public class AbstractPage {
         this.driver = driver;
     }
 
-    void waitForVisibility(WebElement element) {
+    protected void waitForVisibility(WebElement element) {
         wait.until(ExpectedConditions.visibilityOf(element));
     }
 

@@ -1,5 +1,6 @@
 package steps;
 
+import components.DialogHelper;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.remote.MobileCapabilityType;
 import io.appium.java_client.remote.MobilePlatform;
@@ -9,7 +10,6 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import pages.DialogHelper;
 import pages.MainPage;
 import pages.ProductPage;
 
@@ -192,5 +192,117 @@ public class AppiumTests {
         assertThat(productPage.getCountOfItems(), is(1));
         assertThat(productPage.getSpecifiedItemCost("cabbages"), is(2.99));
         assertThat(productPage.getSpecifiedItemAmount("cabbages"), is(10.00));
+    }
+
+    @Test(description = "Set long name for product")
+    public void setLongNameForItem() {
+        mainPage.addNewBuyList("The eighth one");
+
+        productPage.setProductName("The biggest name of the 2018 year");
+        productPage.setPrice(14.99);
+        productPage.setAmount(2);
+        productPage.selectAmountType("l");
+        productPage.clickAddProduct();
+
+        assertThat(productPage.getCountOfItems(), is(1));
+        assertThat(productPage.getNameOfFirstProduct().length(),
+                lessThan("The biggest name of the 2018 year".length()));
+    }
+
+    @Test(description = "Copy product from one list to another")
+    public void copyProductFromOneListToAnother() {
+        mainPage.addNewBuyList("The sixth one");
+
+        productPage.setProductName("scissors");
+        productPage.setPrice(7.99);
+        productPage.setAmount(2);
+        productPage.selectAmountType("unit");
+        productPage.clickAddProduct();
+
+        productPage.clickBackButton();
+        mainPage.addNewBuyList("The seventh one");
+        productPage.clickBackButton();
+        mainPage.clickOnSpecifiedShoppingList("The sixth one");
+
+        productPage.clickCopyItem("scissors");
+        dialogHelper.selectShoppingList("The seventh one");
+
+        assertThat(productPage.getCountOfItems(), is(1));
+
+        productPage.clickBackButton();
+
+        assertThat(mainPage.getCountOfShoppingLists(), is(2));
+
+        mainPage.clickOnSpecifiedShoppingList("The seventh one");
+
+        assertThat(productPage.getCountOfItems(), is(1));
+        assertThat(productPage.getTotal(), containsString(String.valueOf(2*7.99)));
+    }
+
+    @Test(description = "Copy product when exist only one Shopping List")
+    public void copyProductWithOneShoppingList() {
+        mainPage.addNewBuyList("The ninth one");
+
+        productPage.setProductName("coal");
+        productPage.clickAddProduct();
+
+        productPage.clickCopyItem("coal");
+
+        assertThat(dialogHelper.getCountOfShoppingListsInDialog(), is(1));
+
+        dialogHelper.selectShoppingList("The ninth one");
+
+        assertThat(productPage.getCountOfItems(), is(1));
+    }
+
+    @Test(description = "Edit shopping list")
+    public void editShoppingList() {
+        mainPage.addNewBuyList("The tenth one");
+
+        productPage.setProductName("toys");
+        productPage.clickAddProduct();
+        productPage.clickBackButton();
+
+        mainPage.editShoppingListByIndex(0);
+        dialogHelper.setEditShoppingListTB(" plus");
+
+        assertThat(mainPage.getShoppingListName(), is("The tenth one plus"));
+    }
+
+    @Test(description = "Remove empty shopping list")
+    public void removeEmptyShoppingList() {
+        mainPage.addNewBuyList("The twelfth one");
+        productPage.clickBackButton();
+
+        assertThat(mainPage.getCountOfShoppingLists(), is(1));
+
+        mainPage.removeShoppingListByIndex(0);
+
+        assertThat(dialogHelper.getDialogTitle(), is("Delete"));
+        assertThat(dialogHelper.getDialogMessage(), is("Are you sure?"));
+
+        dialogHelper.clickOk();
+
+        assertThat(mainPage.getCountOfShoppingLists(), is(0));
+    }
+
+    @Test(description = "Remove list with products")
+    public void removeShoppingListWithProducts() {
+        mainPage.addNewBuyList("The thirteenth one");
+
+        productPage.setProductName("onions");
+        productPage.setAmount(2.5);
+        productPage.setPrice(0.99);
+        productPage.selectAmountType("kg.");
+        productPage.clickAddProduct();
+
+        productPage.clickBackButton();
+
+        assertThat(mainPage.getCountOfShoppingLists(), is(1));
+
+        mainPage.removeShoppingListByIndex(0);
+        dialogHelper.clickOk();
+
+        assertThat(mainPage.getCountOfShoppingLists(), is(0));
     }
 }

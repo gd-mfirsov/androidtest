@@ -13,20 +13,12 @@ public class MainPage extends AbstractPage{
         super(driver);
     }
 
-    @AndroidFindBy(id = "com.slava.buylist:id/button1")
-    private WebElement menuButton;
     @AndroidFindBy(id = "com.slava.buylist:id/button2")
     private WebElement addNew;
     @AndroidFindBy(id = "com.slava.buylist:id/editText1")
     private WebElement textBox;
     @AndroidFindBy(xpath = "//android.widget.ListView//android.widget.RelativeLayout")
     private List<WebElement> shoppingLists;
-    @AndroidFindBy(id = "com.slava.buylist:id/title")
-    private WebElement shoppingListTitle;
-    @AndroidFindBy(id = "com.slava.buylist:id/imageView2")
-    private WebElement shoppingListEdit;
-    @AndroidFindBy(id = "com.slava.buylist:id/imageView1")
-    private WebElement shoppingListRemove;
 
     @Step
     public void addNewBuyList(String buyListName) {
@@ -63,11 +55,7 @@ public class MainPage extends AbstractPage{
     }
 
     @Step
-    public void removeAllshoppingLists() {
-        shoppingLists.forEach(c -> {
-            c.findElement(By.id("com.slava.buylist:id/imageView1")).click();
-            waitForVisibility(driver.findElement(By.id("android:id/button1")));
-            driver.findElement(By.id("android:id/button1")).click();
-        });
+    public int getCountOfShoppingLists() {
+        return shoppingLists.size();
     }
 }
