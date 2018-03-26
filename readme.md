@@ -25,9 +25,9 @@ First of all, to execute test suite you need to install Node.js and Appium serve
 
 - Install Appium
 
-```
-npm install -g appium
-```
+  ```
+  npm install -g appium
+  ```
 
 <h2>Execute</h2>
 
@@ -37,20 +37,20 @@ npm install -g appium
 
 - Execute following command in Terminal:
 
-```
-mvn clean install
-```
+  ```
+  mvn clean install
+  ```
 
 <h2>Generate and open test report</h2>
 
 - Install `Allure`
 
-```
-npm install -g allure-commandline
-```
+  ```
+  npm install -g allure-commandline
+  ```
 
 - Navigate in Terminal to `androidtest` folder and execute command
 
-```
-allure serve allure-results
-```
+  ```
+  allure serve allure-results
+  ```
