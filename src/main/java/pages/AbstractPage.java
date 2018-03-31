@@ -1,5 +1,6 @@
 package pages;
 
+import core.DriverManager;
 import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.AndroidKeyCode;
@@ -9,15 +10,17 @@ import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.sql.Driver;
+
 public class AbstractPage {
 
     private WebDriverWait wait;
-    protected AppiumDriver driver;
+    protected AndroidDriver androidDriver;
 
-    protected AbstractPage(AppiumDriver driver) {
-        wait = new WebDriverWait(driver, 10);
-        PageFactory.initElements(new AppiumFieldDecorator(driver), this);
-        this.driver = driver;
+    protected AbstractPage() {
+        androidDriver = new DriverManager().getAndroidDriver();
+        wait = new WebDriverWait(new DriverManager().getAndroidDriver(), 10);
+        PageFactory.initElements(new AppiumFieldDecorator(androidDriver), this);
     }
 
     protected void waitForVisibility(WebElement element) {
@@ -29,6 +32,6 @@ public class AbstractPage {
     }
 
     public void clickBackButton() {
-        ((AndroidDriver)driver).pressKeyCode(AndroidKeyCode.BACK);
+        (new DriverManager().getAndroidDriver()).pressKeyCode(AndroidKeyCode.BACK);
     }
 }

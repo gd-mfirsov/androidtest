@@ -1,8 +1,8 @@
 package pages;
 
-import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.MobileBy;
 import io.appium.java_client.TouchAction;
+import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 import io.qameta.allure.Step;
 import org.openqa.selenium.By;
@@ -11,8 +11,10 @@ import org.openqa.selenium.WebElement;
 import java.util.List;
 
 public class ProductPage extends AbstractPage{
-    public ProductPage(AppiumDriver driver) {
-        super(driver);
+    private AndroidDriver driver;
+    public ProductPage() {
+        super();
+        driver = super.androidDriver;
     }
 
     @AndroidFindBy(id = "com.slava.buylist:id/editText1")
@@ -35,57 +37,64 @@ public class ProductPage extends AbstractPage{
     private List<WebElement> itemsList;
 
     @Step
-    public void setProductName(String productName) {
+    public ProductPage setProductName(String productName) {
         waitForVisibility(productTB);
         productTB.clear();
         productTB.sendKeys(productName);
+        return this;
     }
 
     @Step
-    public void setPrice(double productPrice) {
+    public ProductPage setPrice(double productPrice) {
         waitForVisibility(priceTB);
         priceTB.clear();
         priceTB.sendKeys(Double.toString(productPrice));
+        return this;
     }
 
     @Step
-    public void setAmount(double productAmount) {
+    public ProductPage setAmount(double productAmount) {
         waitForVisibility(amountTB);
         amountTB.clear();
         amountTB.sendKeys(Double.toString(productAmount));
+        return this;
     }
 
     @Step
-    public void setComment(String comment) {
+    public ProductPage setComment(String comment) {
         waitForVisibility(commentTB);
         commentTB.clear();
         commentTB.sendKeys(comment);
+        return this;
     }
 
     @Step
-    public void selectAmountType(String amountType) {
+    public ProductPage selectAmountType(String amountType) {
         amountTypeSpinner.click();
         waitForVisibility(driver
                 .findElement(By
                         .xpath("//android.widget.ListView[@resource-id=\"android:id/select_dialog_listview\"]")));
         driver.findElement(MobileBy.AndroidUIAutomator("new UiScrollable(new UiSelector())" +
                 ".scrollIntoView(new UiSelector().text(\"" + amountType + "\"));")).click();
+        return this;
     }
 
     @Step
-    public void selectCategory(String category) {
+    public ProductPage selectCategory(String category) {
         categorySpinner.click();
         waitForVisibility(driver
                 .findElement(By
                         .xpath("//android.widget.ListView[@resource-id=\"android:id/select_dialog_listview\"]")));
         driver.findElement(MobileBy.AndroidUIAutomator("new UiScrollable(new UiSelector())" +
                 ".scrollIntoView(new UiSelector().text(\"" + category + "\"));")).click();
+        return this;
     }
 
     @Step
-    public void clickAddProduct() {
+    public ProductPage clickAddProduct() {
         waitForVisibility(addProductButton);
         addProductButton.click();
+        return this;
     }
 
     private WebElement getSpecifiedItem(String itemName) {
@@ -118,10 +127,11 @@ public class ProductPage extends AbstractPage{
         return itemsList.size();
     }
 
-    private void longPressOnSpecifiedItem(String itemName) {
+    private ProductPage longPressOnSpecifiedItem(String itemName) {
         TouchAction touchAction = new TouchAction(driver);
         waitForVisibility(itemsList.get(0));
         touchAction.longPress(getSpecifiedItem(itemName)).perform();
+        return this;
     }
 
     @Step
@@ -131,30 +141,34 @@ public class ProductPage extends AbstractPage{
     }
 
     @Step
-    public void deleteSpecifiedItem(String itemName) {
+    public ProductPage deleteSpecifiedItem(String itemName) {
         longPressOnSpecifiedItem(itemName);
         waitForVisibility(driver.findElement(By.xpath("//android.widget.TextView[@text='Remove']")));
         driver.findElement(By.xpath("//android.widget.TextView[@text='Remove']")).click();
         waitForVisibility(driver.findElement(MobileBy.xpath("//android.widget.Button[@text='YES']")));
         driver.findElement(By.xpath("//android.widget.Button[@text='YES']")).click();
+        return this;
     }
 
     @Step
-    public void editSpecifiedItem(String itemName) {
+    public ProductPage editSpecifiedItem(String itemName) {
         longPressOnSpecifiedItem(itemName);
         waitForVisibility(driver.findElement(By.xpath("//android.widget.TextView[@text='Edit']")));
         driver.findElement(By.xpath("//android.widget.TextView[@text='Edit']")).click();
+        return this;
     }
 
     @Step
-    public void setSpecifiedItemAsBought(String itemName) {
+    public ProductPage setSpecifiedItemAsBought(String itemName) {
         getSpecifiedItem(itemName).findElement(By.id("com.slava.buylist:id/imageView1")).click();
+        return this;
     }
 
     @Step
-    public void clickSaveButtonOnEditItem() {
+    public ProductPage clickSaveButtonOnEditItem() {
         waitForVisibility(addProductButton);
         addProductButton.click();
+        return this;
     }
 
     @Step
@@ -170,10 +184,11 @@ public class ProductPage extends AbstractPage{
     }
 
     @Step
-    public void clickCopyItem(String itemName) {
+    public ProductPage clickCopyItem(String itemName) {
         longPressOnSpecifiedItem(itemName);
         waitForVisibility(driver.findElement(By.xpath("//android.widget.TextView[@text='Copy']")));
         driver.findElement(By.xpath("//android.widget.TextView[@text='Copy']")).click();
+        return this;
     }
 
     @Step

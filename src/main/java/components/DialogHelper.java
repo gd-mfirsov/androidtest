@@ -1,6 +1,5 @@
 package components;
 
-import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 import io.qameta.allure.Step;
 import org.openqa.selenium.WebElement;
@@ -9,8 +8,8 @@ import pages.AbstractPage;
 import java.util.List;
 
 public class DialogHelper extends AbstractPage {
-    public DialogHelper(AppiumDriver driver) {
-        super(driver);
+    public DialogHelper() {
+        super();
     }
 
     @AndroidFindBy(id = "android:id/alertTitle")
@@ -42,22 +41,25 @@ public class DialogHelper extends AbstractPage {
     }
 
     @Step
-    public void clickOk() {
+    public DialogHelper clickOk() {
         waitForVisibility(dialogOk);
         dialogOk.click();
+        return this;
     }
 
     @Step
-    public void clickCancel() {
+    public DialogHelper clickCancel() {
         waitForVisibility(dialogCancel);
         dialogCancel.click();
+        return this;
     }
 
     @Step
-    public void selectShoppingList(String listName) {
+    public DialogHelper selectShoppingList(String listName) {
         waitForVisibility(dialogList);
         dialogShoppingList.stream().filter(s -> s.getText().equals(listName))
                 .findFirst().ifPresent(WebElement::click);
+        return this;
     }
 
     @Step
@@ -67,10 +69,11 @@ public class DialogHelper extends AbstractPage {
     }
 
     @Step
-    public void setEditShoppingListTB(String shoppingListName) {
+    public DialogHelper setEditShoppingListTB(String shoppingListName) {
         waitForVisibility(editShoppingListTB);
         editShoppingListTB.click();
         editShoppingListTB.sendKeys(shoppingListName);
         dialogOk.click();
+        return this;
     }
 }
