@@ -45,7 +45,7 @@ public class DriverManager {
             e.printStackTrace();
         }
         if (appiumDriver == null) {
-            appiumDriver = new AppiumDriver(new URL(properties.getProperty("appium.server.url") + "/wd/hub"),
+            appiumDriver = new AppiumDriver(new URL(properties.getProperty("appium.server.url")),
                     getAndroidCapabilities());
         }
         return appiumDriver;
@@ -55,11 +55,12 @@ public class DriverManager {
         File appDir = new File("src");
         File app = new File(appDir, "Shopping List.apk");
         DesiredCapabilities capabilities = new DesiredCapabilities();
+        capabilities.setCapability("avd", "Pixel");
         capabilities.setCapability(MobileCapabilityType.PLATFORM_NAME, MobilePlatform.ANDROID);
         capabilities.setCapability(MobileCapabilityType.PLATFORM_VERSION, "8.0");
         capabilities.setCapability(MobileCapabilityType.APP, app);
-        capabilities.setCapability(MobileCapabilityType.AUTOMATION_NAME, "uiautomator2");
-        capabilities.setCapability(MobileCapabilityType.DEVICE_NAME, "Android Emulator");
+//        capabilities.setCapability(MobileCapabilityType.AUTOMATION_NAME, "uiautomator2");
+        capabilities.setCapability(MobileCapabilityType.DEVICE_NAME, "Pixel");
         capabilities.setCapability("unicodeKeyboard", true);
         capabilities.setCapability("resetKeyboard", true);
         return capabilities;

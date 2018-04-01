@@ -11,6 +11,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.sql.Driver;
+import java.util.concurrent.TimeUnit;
 
 public class AbstractPage {
 
@@ -19,6 +20,7 @@ public class AbstractPage {
 
     protected AbstractPage() {
         androidDriver = new DriverManager().getAndroidDriver();
+        androidDriver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
         wait = new WebDriverWait(new DriverManager().getAndroidDriver(), 10);
         PageFactory.initElements(new AppiumFieldDecorator(androidDriver), this);
     }

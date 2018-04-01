@@ -1,15 +1,12 @@
 package steps;
 
+import core.AppiumServerService;
 import core.DriverManager;
+import core.Retry;
 import io.appium.java_client.android.AndroidDriver;
 import io.qameta.allure.Feature;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 import pages.Pages;
-
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -20,11 +17,16 @@ public class AppiumTests {
     private static AndroidDriver androidDriver;
     private DriverManager driverManager = new DriverManager();
     private Pages pages = new Pages();
+    AppiumServerService serverService = new AppiumServerService();
+
+    @BeforeTest
+    public void beforeTest() {
+        serverService.getLocalService().start();
+    }
 
     @BeforeClass
     public void beforeMethod() {
         androidDriver = driverManager.getAndroidDriver();
-        androidDriver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
     }
 
     @AfterClass
@@ -37,7 +39,12 @@ public class AppiumTests {
         androidDriver.resetApp();
     }
 
-    @Test(description = "Add Shopping List with few products")
+    @AfterTest
+    public void afterTest() {
+        serverService.getLocalService().stop();
+    }
+
+    @Test(description = "Add Shopping List with few products", retryAnalyzer = Retry.class)
     public void addNewShoppingList() {
         pages.getMainPage().addNewBuyList("Dummy one");
 
@@ -68,7 +75,7 @@ public class AppiumTests {
         assertThat(pages.getProductPage().getSpecifiedItemCommentText("potato"), is(""));
     }
 
-    @Test(description = "Add item in shopping list and then remove it")
+    @Test(description = "Add item in shopping list and then remove it", retryAnalyzer = Retry.class)
     public void removeItemFromShoppingList() {
         pages.getMainPage().addNewBuyList("The first one");
 
@@ -87,7 +94,7 @@ public class AppiumTests {
         assertThat(pages.getProductPage().getTotal(), is("Total: 0 £"));
     }
 
-    @Test(description = "Make some products as bought")
+    @Test(description = "Make some products as bought", retryAnalyzer = Retry.class)
     public void makeSomeProductsAsBought() {
         pages.getMainPage().addNewBuyList("The second one");
 
@@ -117,7 +124,7 @@ public class AppiumTests {
         assertThat(pages.getProductPage().getCountOfItems(), is(3));
     }
 
-    @Test(description = "Edit product without changes")
+    @Test(description = "Edit product without changes", retryAnalyzer = Retry.class)
     public void editProductWithoutChanges() {
         pages.getMainPage().addNewBuyList("The third one");
 
@@ -138,7 +145,7 @@ public class AppiumTests {
         assertThat(pages.getProductPage().getCountOfItems(), is(1));
     }
 
-    @Test(description = "Change parameters while edit item")
+    @Test(description = "Change parameters while edit item", retryAnalyzer = Retry.class)
     public void editProduct() {
         pages.getMainPage().addNewBuyList("The fourth one");
 
@@ -159,7 +166,7 @@ public class AppiumTests {
         assertThat(pages.getProductPage().getSpecifiedItemAmount("carrot"), is(8.00));
     }
 
-    @Test(description = "Change parameters on edit page and click Back button")
+    @Test(description = "Change parameters on edit page and click Back button", retryAnalyzer = Retry.class)
     public void discardChangesOnProduct() {
         pages.getMainPage().addNewBuyList("The fifth one");
 
@@ -186,7 +193,7 @@ public class AppiumTests {
         assertThat(pages.getProductPage().getSpecifiedItemAmount("cabbages"), is(10.00));
     }
 
-    @Test(description = "Set long name for product")
+    @Test(description = "Set long name for product", retryAnalyzer = Retry.class)
     public void setLongNameForItem() {
         pages.getMainPage().addNewBuyList("The eighth one");
 
@@ -202,7 +209,7 @@ public class AppiumTests {
                 lessThan("The biggest name of the 2018 year".length()));
     }
 
-    @Test(description = "Copy product from one list to another")
+    @Test(description = "Copy product from one list to another", retryAnalyzer = Retry.class)
     public void copyProductFromOneListToAnother() {
         pages.getMainPage().addNewBuyList("The sixth one");
 
@@ -233,7 +240,7 @@ public class AppiumTests {
         assertThat(pages.getProductPage().getTotal(), containsString(String.valueOf(2 * 7.99)));
     }
 
-    @Test(description = "Copy product when exist only one Shopping List")
+    @Test(description = "Copy product when exist only one Shopping List", retryAnalyzer = Retry.class)
     public void copyProductWithOneShoppingList() {
         pages.getMainPage().addNewBuyList("The ninth one");
 
@@ -249,7 +256,7 @@ public class AppiumTests {
         assertThat(pages.getProductPage().getCountOfItems(), is(1));
     }
 
-    @Test(description = "Edit shopping list")
+    @Test(description = "Edit shopping list", retryAnalyzer = Retry.class)
     public void editShoppingList() {
         pages.getMainPage().addNewBuyList("The tenth one");
 
@@ -264,7 +271,7 @@ public class AppiumTests {
         assertThat(pages.getMainPage().getShoppingListName(), is("The tenth one plus"));
     }
 
-    @Test(description = "Remove empty shopping list")
+    @Test(description = "Remove empty shopping list", retryAnalyzer = Retry.class)
     public void removeEmptyShoppingList() {
         pages.getMainPage().addNewBuyList("The twelfth one");
         pages.getProductPage().clickBackButton();
@@ -281,7 +288,7 @@ public class AppiumTests {
         assertThat(pages.getMainPage().getCountOfShoppingLists(), is(0));
     }
 
-    @Test(description = "Remove list with products")
+    @Test(description = "Remove list with products", retryAnalyzer = Retry.class)
     public void removeShoppingListWithProducts() {
         pages.getMainPage().addNewBuyList("The thirteenth one");
 
