@@ -9,6 +9,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
 import java.util.List;
+import java.util.Scanner;
 
 public class ProductPage extends AbstractPage{
     private AndroidDriver driver;
@@ -135,9 +136,15 @@ public class ProductPage extends AbstractPage{
     }
 
     @Step
-    public String getTotal() {
+    public double getTotal() {
         waitForVisibility(totalValue);
-        return totalValue.getText();
+        Scanner scanner = new Scanner(totalValue.getText());
+        double result;
+        while (!scanner.hasNextDouble()) {
+            scanner.next();
+        }
+        result = scanner.nextDouble();
+        return result;
     }
 
     @Step

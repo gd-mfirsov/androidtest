@@ -1,0 +1,46 @@
+{
+  "lists": [
+    {
+      "shoppingList": "First list",
+      "products": [
+        {
+          "name": "milk",
+          "price": 1.99,
+          "amount": 2.00,
+          "amountType": "l",
+          "category": "Dairy produce",
+          "comment": "This milk must be fresh"
+        },
+        {
+          "name": "chocolate",
+          "price": 14.99,
+          "amount": 2.50,
+          "amountType": "kg.",
+          "category": "No category",
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "shoppingList": "Second list",
+      "products": [
+        {
+          "name": "scissors",
+          "price": 5.99,
+          "amount": 1.00,
+          "amountType": "pcs.",
+          "category": "Household appliances",
+          "comment": ""
+        },
+        {
+          "name": "The biggest name of the 2018 year",
+          "price": 7.99,
+          "amount": 2.00,
+          "amountType": "box",
+          "category": "Bread, cakes and pastries",
+          "comment": ""
+        }
+      ]
+    }
+  ]
+}
