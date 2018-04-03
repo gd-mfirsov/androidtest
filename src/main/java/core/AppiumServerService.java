@@ -21,19 +21,18 @@ public class AppiumServerService {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        String osType = properties.getProperty("os.type");
-        if (osType.equals("mac")) {
-            System.setProperty(AppiumServiceBuilder.NODE_PATH, Mac_Node_JS_Path);
-            System.setProperty(AppiumServiceBuilder.APPIUM_PATH, Mac_Appium_JS_Path);
+        switch (properties.getProperty("os.type")) {
+            case "mac":
+                System.setProperty(AppiumServiceBuilder.NODE_PATH, Mac_Node_JS_Path);
+                System.setProperty(AppiumServiceBuilder.APPIUM_PATH, Mac_Appium_JS_Path);
+                break;
+            case "windows":
+                System.setProperty(AppiumServiceBuilder.NODE_PATH, Windows_Node_JS_Path);
+                System.setProperty(AppiumServiceBuilder.APPIUM_PATH, Windows_Appium_JS_Path);
+                break;
+            default:
+                throw new Exception("Incorrect OS Type");
         }
-        else if (osType.equals("windows")) {
-            System.setProperty(AppiumServiceBuilder.NODE_PATH, Windows_Node_JS_Path);
-            System.setProperty(AppiumServiceBuilder.APPIUM_PATH, Windows_Appium_JS_Path);
-        }
-        else {
-            throw new Exception("Incorrect OS Type");
-        }
-
         localService = AppiumDriverLocalService.buildDefaultService();
     }
 
