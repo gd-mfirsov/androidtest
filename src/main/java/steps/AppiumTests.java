@@ -1,22 +1,17 @@
 package steps;
 
-import components.DialogHelper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import core.AppiumServerService;
+import core.DriverManager;
+import core.Retry;
+import data.DataTestObject;
 import io.appium.java_client.android.AndroidDriver;
-import io.appium.java_client.remote.MobileCapabilityType;
-import io.appium.java_client.remote.MobilePlatform;
 import io.qameta.allure.Feature;
-import org.openqa.selenium.remote.DesiredCapabilities;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import pages.MainPage;
-import pages.ProductPage;
+import org.testng.annotations.*;
+import pages.Pages;
 
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.concurrent.TimeUnit;
+import java.io.IOException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -25,26 +20,38 @@ import static org.hamcrest.Matchers.*;
 public class AppiumTests {
 
     private static AndroidDriver androidDriver;
-    private MainPage mainPage;
-    private ProductPage productPage;
-    private DialogHelper dialogHelper;
+    private DriverManager driverManager = new DriverManager();
+    private Pages pages = new Pages();
+    private AppiumServerService serverService = new AppiumServerService();
+    private ObjectMapper objectMapper = new ObjectMapper();
+    private DataTestObject testObject;
+
+    private static String DIALOG_SAVE_TITLE = "Save";
+    private static String DIALOG_SAVE_MESSAGE = "Save current item?";
+    private static String DIALOG_DELETE_TITLE = "Delete";
+    private static String DIALOG_DELETE_MESSAGE = "Are you sure?";
+
+    public AppiumTests() throws Exception {
+    }
+
+    @BeforeTest
+    public void beforeTest() {
+        serverService.getLocalService().start();
+    }
 
     @BeforeClass
-    public void beforeMethod() throws MalformedURLException {
-        File appDir = new File("src");
-        File app = new File(appDir, "Shopping List.apk");
-        DesiredCapabilities capabilities = new DesiredCapabilities();
-        capabilities.setCapability(MobileCapabilityType.PLATFORM_NAME, MobilePlatform.ANDROID);
-        capabilities.setCapability(MobileCapabilityType.PLATFORM_VERSION, "8.0");
-        capabilities.setCapability(MobileCapabilityType.APP, app);
-        capabilities.setCapability(MobileCapabilityType.DEVICE_NAME, "Android Emulator");
-        capabilities.setCapability("unicodeKeyboard", true);
-        capabilities.setCapability("resetKeyboard", true);
-        androidDriver = new AndroidDriver(new URL("http://localhost:4723/wd/hub"), capabilities);
-        androidDriver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-        mainPage = new MainPage(androidDriver);
-        productPage = new ProductPage(androidDriver);
-        dialogHelper = new DialogHelper(androidDriver);
+    public void beforeClass() {
+        androidDriver = driverManager.getAndroidDriver();
+        try {
+            testObject = objectMapper.readValue(new File("testdata/test_data.json"), DataTestObject.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @BeforeMethod
+    public void beforeMethod() {
+        pages.getMainPage().addNewBuyList(testObject.getLists().get(0).getShoppingList());
     }
 
     @AfterClass
@@ -57,252 +64,281 @@ public class AppiumTests {
         androidDriver.resetApp();
     }
 
-    @Test(description = "Add Shopping List with few products")
+    @AfterTest
+    public void afterTest() {
+        serverService.getLocalService().stop();
+    }
+
+    @Test(description = "Add Shopping List with few products", retryAnalyzer = Retry.class)
     public void addNewShoppingList() {
-        mainPage.addNewBuyList("Dummy one");
 
-        assertThat(productPage.getCountOfItems(), is(0));
+        assertThat(pages.getProductPage().getCountOfItems(), is(0));
 
-        productPage.setProductName("milk");
-        productPage.setPrice(12.99);
-        productPage.setAmount(5);
-        productPage.setComment("This milk must be fresh");
-        productPage.clickAddProduct();
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(0).getProducts().get(0).getName())
+                .setPrice(testObject.getLists().get(0).getProducts().get(0).getPrice())
+                .setAmount(testObject.getLists().get(0).getProducts().get(0).getAmount())
+                .setComment(testObject.getLists().get(0).getProducts().get(0).getComment())
+                .clickAddProduct();
 
-        assertThat(productPage.getCountOfItems(), is(1));
-        assertThat(productPage.getTotal(), containsString(Double.toString(64.95)));
-        assertThat(productPage.getSpecifiedItemAmount("milk"), is(5.0));
-        assertThat(productPage.getSpecifiedItemCost("milk"), is(12.99));
-        assertThat(productPage.getSpecifiedItemCommentText("milk"), is("This milk must be fresh"));
+        int countOfItems = pages.getProductPage().getCountOfItems();
+        double total = pages.getProductPage().getTotal();
+        double itemAmount = pages.getProductPage().getSpecifiedItemAmount(testObject.getLists().get(0)
+                .getProducts().get(0).getName());
+        double itemCost = pages.getProductPage().getSpecifiedItemCost(testObject.getLists().get(0)
+                .getProducts().get(0).getName());
+        String itemComment = pages.getProductPage()
+                .getSpecifiedItemCommentText(testObject.getLists().get(0).getProducts().get(0).getName());
 
-        productPage.setProductName("potato");
-        productPage.setAmount(100);
-        productPage.selectAmountType("kg.");
-        productPage.clickAddProduct();
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(0).getProducts().get(1).getName())
+                .setAmount(testObject.getLists().get(0).getProducts().get(1).getAmount())
+                .selectAmountType(testObject.getLists().get(0).getProducts().get(1).getAmountType())
+                .clickAddProduct();
 
-        assertThat(productPage.getCountOfItems(), is(2));
-        assertThat(productPage.getTotal(), containsString(Double.toString(64.95)));
-        assertThat(productPage.getSpecifiedItemCommentText("potato"), is(""));
+        assertThat(countOfItems, is(1));
+        assertThat(total, is(testObject.getLists().get(0).getProducts().get(0).getPrice() *
+                testObject.getLists().get(0).getProducts().get(0).getAmount()));
+        assertThat(itemAmount, is(testObject.getLists().get(0).getProducts().get(0).getAmount()));
+        assertThat(itemCost, is(testObject.getLists().get(0).getProducts().get(0).getPrice()));
+        assertThat(itemComment, is(testObject.getLists().get(0).getProducts().get(0).getComment()));
+
+        assertThat(pages.getProductPage().getCountOfItems(), is(2));
+        assertThat(pages.getProductPage().getTotal(),
+                is(testObject.getLists().get(0).getProducts().get(0).getPrice() *
+                testObject.getLists().get(0).getProducts().get(0).getAmount()));
+        assertThat(pages.getProductPage()
+                .getSpecifiedItemCommentText(testObject.getLists().get(0).getProducts().get(1).getName()),
+                is(""));
     }
 
-    @Test(description = "Add item in shopping list and then remove it")
+    @Test(description = "Add item in shopping list and then remove it", retryAnalyzer = Retry.class)
     public void removeItemFromShoppingList() {
-        mainPage.addNewBuyList("The first one");
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(0).getProducts().get(0).getName())
+                .setAmount(testObject.getLists().get(0).getProducts().get(0).getAmount())
+                .setPrice(testObject.getLists().get(0).getProducts().get(0).getPrice())
+                .selectCategory(testObject.getLists().get(0).getProducts().get(0).getCategory())
+                .clickAddProduct();
 
-        assertThat(productPage.getCountOfItems(), is(0));
+        pages.getProductPage().deleteSpecifiedItem(testObject.getLists().get(0).getProducts().get(0).getName());
 
-        productPage.setProductName("icecream");
-        productPage.setAmount(2);
-        productPage.setPrice(4.99);
-        productPage.selectCategory("Frozen food");
-        productPage.clickAddProduct();
-
-        productPage.deleteSpecifiedItem("icecream");
-
-        assertThat(productPage.getCountOfItems(), is(0));
-        assertThat(productPage.getTotal(), is("Total: 0 £"));
+        assertThat(pages.getProductPage().getCountOfItems(), is(0));
+        assertThat(pages.getProductPage().getTotal(), is(0));
     }
 
-    @Test(description = "Make some products as bought")
+    @Test(description = "Make some products as bought", retryAnalyzer = Retry.class)
     public void makeSomeProductsAsBought() {
-        mainPage.addNewBuyList("The second one");
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(0).getProducts().get(0).getName())
+                .setAmount(testObject.getLists().get(0).getProducts().get(0).getAmount())
+                .setPrice(testObject.getLists().get(0).getProducts().get(0).getPrice())
+                .clickAddProduct();
 
-        productPage.setProductName("pasta");
-        productPage.setAmount(3);
-        productPage.setPrice(4.76);
-        productPage.clickAddProduct();
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(0).getProducts().get(1).getName())
+                .setPrice(testObject.getLists().get(0).getProducts().get(1).getPrice())
+                .setAmount(testObject.getLists().get(0).getProducts().get(1).getAmount())
+                .clickAddProduct();
 
-        productPage.setProductName("bread");
-        productPage.setPrice(2.4);
-        productPage.setAmount(1.5);
-        productPage.clickAddProduct();
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(1).getProducts().get(0).getName())
+                .setPrice(testObject.getLists().get(1).getProducts().get(0).getPrice())
+                .setAmount(testObject.getLists().get(1).getProducts().get(0).getAmount())
+                .selectAmountType(testObject.getLists().get(1).getProducts().get(0).getAmountType())
+                .clickAddProduct();
 
-        productPage.setProductName("salad");
-        productPage.setPrice(1.99);
-        productPage.setAmount(2);
-        productPage.selectAmountType("kg.");
-        productPage.clickAddProduct();
+        int itemsCount = pages.getProductPage().getCountOfItems();
 
-        assertThat(productPage.getCountOfItems(), is(3));
+        pages.getProductPage().setSpecifiedItemAsBought(testObject.getLists().get(0).getProducts().get(1).getName());
 
-        productPage.setSpecifiedItemAsBought("bread");
-
-        assertThat(productPage.getCountOfItems(), is(3));
+        assertThat(itemsCount, is(3));
+        assertThat(pages.getProductPage().getCountOfItems(), is(3));
     }
 
-    @Test(description = "Edit product without changes")
+    @Test(description = "Edit product without changes", retryAnalyzer = Retry.class)
     public void editProductWithoutChanges() {
-        mainPage.addNewBuyList("The third one");
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(0).getProducts().get(0).getName())
+                .setPrice(testObject.getLists().get(0).getProducts().get(0).getPrice())
+                .setAmount(testObject.getLists().get(0).getProducts().get(0).getAmount())
+                .selectAmountType(testObject.getLists().get(0).getProducts().get(0).getAmountType())
+                .clickAddProduct();
 
-        productPage.setProductName("marshmallow");
-        productPage.setPrice(3.99);
-        productPage.setAmount(10);
-        productPage.selectAmountType("pack");
-        productPage.clickAddProduct();
+        pages.getProductPage().editSpecifiedItem(testObject.getLists().get(0).getProducts().get(0).getName());
 
-        productPage.editSpecifiedItem("marshmallow");
+        double itemAmount = pages.getProductPage().getAmountAsDouble();
+        double itemCost = pages.getProductPage().getPriceAsDouble();
 
-        assertThat(productPage.getAmountAsDouble(), is(10.0));
-        assertThat(productPage.getPriceAsDouble(), is(3.99));
+        pages.getProductPage().clickSaveButtonOnEditItem();
 
-        productPage.clickSaveButtonOnEditItem();
-
-        assertThat(productPage.getCountOfItems(), is(1));
+        assertThat(itemAmount, is(10.0));
+        assertThat(itemCost, is(3.99));
+        assertThat(pages.getProductPage().getCountOfItems(), is(1));
     }
 
-    @Test(description = "Change parameters while edit item")
+    @Test(description = "Change parameters while edit item", retryAnalyzer = Retry.class)
     public void editProduct() {
-        mainPage.addNewBuyList("The fourth one");
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(0).getProducts().get(0).getName())
+                .setPrice(testObject.getLists().get(0).getProducts().get(0).getPrice())
+                .setAmount(testObject.getLists().get(0).getProducts().get(0).getAmount())
+                .selectAmountType(testObject.getLists().get(0).getProducts().get(0).getAmountType())
+                .clickAddProduct();
 
-        productPage.setProductName("carrot");
-        productPage.setPrice(2.99);
-        productPage.setAmount(10);
-        productPage.selectAmountType("kg.");
-        productPage.clickAddProduct();
+        pages.getProductPage()
+                .editSpecifiedItem(testObject.getLists().get(0).getProducts().get(0).getName())
+                .setAmount(testObject.getLists().get(0).getProducts().get(1).getAmount())
+                .clickSaveButtonOnEditItem();
 
-        productPage.editSpecifiedItem("carrot");
-        productPage.setAmount(8);
-        productPage.clickSaveButtonOnEditItem();
-
-        assertThat(productPage.getCountOfItems(), is(1));
-        assertThat(productPage.getSpecifiedItemCost("carrot"), is(2.99));
-        assertThat(productPage.getSpecifiedItemAmount("carrot"), is(8.00));
+        assertThat(pages.getProductPage().getCountOfItems(), is(1));
+        assertThat(pages.getProductPage()
+                .getSpecifiedItemCost(testObject.getLists().get(0).getProducts().get(0).getName()),
+                is(testObject.getLists().get(0).getProducts().get(0).getPrice()));
+        assertThat(pages.getProductPage()
+                .getSpecifiedItemAmount(testObject.getLists().get(0).getProducts().get(0).getName()),
+                is(testObject.getLists().get(0).getProducts().get(1).getPrice()));
     }
 
-    @Test(description = "Change parameters on edit page and click Back button")
+    @Test(description = "Change parameters on edit page and click Back button", retryAnalyzer = Retry.class)
     public void discardChangesOnProduct() {
-        mainPage.addNewBuyList("The fifth one");
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(0).getProducts().get(0).getName())
+                .setPrice(testObject.getLists().get(0).getProducts().get(0).getPrice())
+                .setAmount(testObject.getLists().get(0).getProducts().get(0).getAmount())
+                .selectAmountType(testObject.getLists().get(0).getProducts().get(0).getAmountType())
+                .clickAddProduct();
 
-        productPage.setProductName("cabbages");
-        productPage.setPrice(2.99);
-        productPage.setAmount(10);
-        productPage.selectAmountType("kg.");
-        productPage.clickAddProduct();
+        pages.getProductPage()
+                .editSpecifiedItem(testObject.getLists().get(0).getProducts().get(0).getName())
+                .setAmount(testObject.getLists().get(0).getProducts().get(1).getAmount())
+                .clickBackButton();
 
-        productPage.editSpecifiedItem("cabbages");
-        productPage.setAmount(12);
-        productPage.clickBackButton();
+        String dialogTitle = pages.getDialogHelper().getDialogTitle();
+        String dialogMessage = pages.getDialogHelper().getDialogMessage();
 
-        assertThat(dialogHelper.getDialogTitle(), is("Save"));
-        assertThat(dialogHelper.getDialogMessage(), is("Save current item?"));
+        pages.getDialogHelper().clickCancel();
+        pages.getMainPage().clickOnShoppingListByIndex(0);
 
-        dialogHelper.clickCancel();
-        mainPage.clickOnShoppingListByIndex(0);
-
-        assertThat(productPage.getCountOfItems(), is(1));
-        assertThat(productPage.getSpecifiedItemCost("cabbages"), is(2.99));
-        assertThat(productPage.getSpecifiedItemAmount("cabbages"), is(10.00));
+        assertThat(dialogTitle, is(DIALOG_SAVE_TITLE));
+        assertThat(dialogMessage, is(DIALOG_SAVE_MESSAGE));
+        assertThat(pages.getProductPage().getCountOfItems(), is(1));
+        assertThat(pages.getProductPage()
+                .getSpecifiedItemCost(testObject.getLists().get(0).getProducts().get(0).getName()),
+                is(testObject.getLists().get(0).getProducts().get(0).getPrice()));
+        assertThat(pages.getProductPage()
+                .getSpecifiedItemAmount(testObject.getLists().get(0).getProducts().get(0).getName()),
+                is(testObject.getLists().get(0).getProducts().get(0).getAmount()));
     }
 
-    @Test(description = "Set long name for product")
+    @Test(description = "Set long name for product", retryAnalyzer = Retry.class)
     public void setLongNameForItem() {
-        mainPage.addNewBuyList("The eighth one");
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(1).getProducts().get(1).getName())
+                .setPrice(testObject.getLists().get(1).getProducts().get(1).getPrice())
+                .setAmount(testObject.getLists().get(1).getProducts().get(1).getAmount())
+                .selectAmountType(testObject.getLists().get(1).getProducts().get(1).getAmountType())
+                .clickAddProduct();
 
-        productPage.setProductName("The biggest name of the 2018 year");
-        productPage.setPrice(14.99);
-        productPage.setAmount(2);
-        productPage.selectAmountType("l");
-        productPage.clickAddProduct();
-
-        assertThat(productPage.getCountOfItems(), is(1));
-        assertThat(productPage.getNameOfFirstProduct().length(),
-                lessThan("The biggest name of the 2018 year".length()));
+        assertThat(pages.getProductPage().getCountOfItems(), is(1));
+        assertThat(pages.getProductPage().getNameOfFirstProduct().length(),
+                lessThan(testObject.getLists().get(1).getProducts().get(1).getName().length()));
     }
 
-    @Test(description = "Copy product from one list to another")
+    @Test(description = "Copy product from one list to another", retryAnalyzer = Retry.class)
     public void copyProductFromOneListToAnother() {
-        mainPage.addNewBuyList("The sixth one");
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(0).getProducts().get(0).getName())
+                .setPrice(testObject.getLists().get(0).getProducts().get(0).getPrice())
+                .setAmount(testObject.getLists().get(0).getProducts().get(0).getAmount())
+                .selectAmountType(testObject.getLists().get(0).getProducts().get(0).getAmountType())
+                .clickAddProduct();
 
-        productPage.setProductName("scissors");
-        productPage.setPrice(7.99);
-        productPage.setAmount(2);
-        productPage.selectAmountType("unit");
-        productPage.clickAddProduct();
+        pages.getProductPage().clickBackButton();
+        pages.getMainPage().addNewBuyList(testObject.getLists().get(1).getShoppingList());
+        pages.getProductPage().clickBackButton();
+        pages.getMainPage().clickOnSpecifiedShoppingList(testObject.getLists().get(0).getShoppingList());
 
-        productPage.clickBackButton();
-        mainPage.addNewBuyList("The seventh one");
-        productPage.clickBackButton();
-        mainPage.clickOnSpecifiedShoppingList("The sixth one");
+        pages.getProductPage().clickCopyItem(testObject.getLists().get(0).getProducts().get(0).getName());
+        pages.getDialogHelper().selectShoppingList(testObject.getLists().get(1).getShoppingList());
 
-        productPage.clickCopyItem("scissors");
-        dialogHelper.selectShoppingList("The seventh one");
+        int itemsCount = pages.getProductPage().getCountOfItems();
 
-        assertThat(productPage.getCountOfItems(), is(1));
+        pages.getProductPage().clickBackButton();
 
-        productPage.clickBackButton();
+        int itemsCount2 = pages.getMainPage().getCountOfShoppingLists();
 
-        assertThat(mainPage.getCountOfShoppingLists(), is(2));
+        pages.getMainPage().clickOnSpecifiedShoppingList(testObject.getLists().get(1).getShoppingList());
 
-        mainPage.clickOnSpecifiedShoppingList("The seventh one");
-
-        assertThat(productPage.getCountOfItems(), is(1));
-        assertThat(productPage.getTotal(), containsString(String.valueOf(2*7.99)));
+        assertThat(itemsCount, is(1));
+        assertThat(itemsCount2, is(2));
+        assertThat(pages.getProductPage().getCountOfItems(), is(1));
+        assertThat(pages.getProductPage().getTotal(),
+                is(testObject.getLists().get(0).getProducts().get(0).getPrice() *
+                        testObject.getLists().get(0).getProducts().get(0).getAmount()));
     }
 
-    @Test(description = "Copy product when exist only one Shopping List")
+    @Test(description = "Copy product when exist only one Shopping List", retryAnalyzer = Retry.class)
     public void copyProductWithOneShoppingList() {
-        mainPage.addNewBuyList("The ninth one");
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(0).getProducts().get(0).getName())
+                .clickAddProduct()
+                .clickCopyItem(testObject.getLists().get(0).getProducts().get(0).getName());
 
-        productPage.setProductName("coal");
-        productPage.clickAddProduct();
+        int itemsCount = pages.getDialogHelper().getCountOfShoppingListsInDialog();
 
-        productPage.clickCopyItem("coal");
+        pages.getDialogHelper().selectShoppingList(testObject.getLists().get(0).getShoppingList());
 
-        assertThat(dialogHelper.getCountOfShoppingListsInDialog(), is(1));
-
-        dialogHelper.selectShoppingList("The ninth one");
-
-        assertThat(productPage.getCountOfItems(), is(1));
+        assertThat(itemsCount, is(1));
+        assertThat(pages.getProductPage().getCountOfItems(), is(1));
     }
 
-    @Test(description = "Edit shopping list")
+    @Test(description = "Edit shopping list", retryAnalyzer = Retry.class)
     public void editShoppingList() {
-        mainPage.addNewBuyList("The tenth one");
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(0).getProducts().get(0).getName())
+                .clickAddProduct()
+                .clickBackButton();
 
-        productPage.setProductName("toys");
-        productPage.clickAddProduct();
-        productPage.clickBackButton();
+        pages.getMainPage().editShoppingListByIndex(0);
+        pages.getDialogHelper().setEditShoppingListTB(" plus");
 
-        mainPage.editShoppingListByIndex(0);
-        dialogHelper.setEditShoppingListTB(" plus");
-
-        assertThat(mainPage.getShoppingListName(), is("The tenth one plus"));
+        assertThat(pages.getMainPage().getShoppingListName(),
+                is(testObject.getLists().get(0).getShoppingList() + " plus"));
     }
 
-    @Test(description = "Remove empty shopping list")
+    @Test(description = "Remove empty shopping list", retryAnalyzer = Retry.class)
     public void removeEmptyShoppingList() {
-        mainPage.addNewBuyList("The twelfth one");
-        productPage.clickBackButton();
+        pages.getProductPage().clickBackButton();
 
-        assertThat(mainPage.getCountOfShoppingLists(), is(1));
+        int listsCount = pages.getMainPage().getCountOfShoppingLists();
 
-        mainPage.removeShoppingListByIndex(0);
+        pages.getMainPage().removeShoppingListByIndex(0);
+        pages.getDialogHelper().clickOk();
 
-        assertThat(dialogHelper.getDialogTitle(), is("Delete"));
-        assertThat(dialogHelper.getDialogMessage(), is("Are you sure?"));
-
-        dialogHelper.clickOk();
-
-        assertThat(mainPage.getCountOfShoppingLists(), is(0));
+        assertThat(listsCount, is(1));
+        assertThat(pages.getDialogHelper().getDialogTitle(), is(DIALOG_DELETE_TITLE));
+        assertThat(pages.getDialogHelper().getDialogMessage(), is(DIALOG_DELETE_MESSAGE));
+        assertThat(pages.getMainPage().getCountOfShoppingLists(), is(0));
     }
 
-    @Test(description = "Remove list with products")
+    @Test(description = "Remove list with products", retryAnalyzer = Retry.class)
     public void removeShoppingListWithProducts() {
-        mainPage.addNewBuyList("The thirteenth one");
+        pages.getProductPage()
+                .setProductName(testObject.getLists().get(0).getProducts().get(0).getName())
+                .setAmount(testObject.getLists().get(0).getProducts().get(0).getAmount())
+                .setPrice(testObject.getLists().get(0).getProducts().get(0).getPrice())
+                .selectAmountType(testObject.getLists().get(0).getProducts().get(0).getAmountType())
+                .clickAddProduct();
 
-        productPage.setProductName("onions");
-        productPage.setAmount(2.5);
-        productPage.setPrice(0.99);
-        productPage.selectAmountType("kg.");
-        productPage.clickAddProduct();
+        pages.getProductPage().clickBackButton();
 
-        productPage.clickBackButton();
+        int itemsCount = pages.getMainPage().getCountOfShoppingLists();
 
-        assertThat(mainPage.getCountOfShoppingLists(), is(1));
+        pages.getMainPage().removeShoppingListByIndex(0);
+        pages.getDialogHelper().clickOk();
 
-        mainPage.removeShoppingListByIndex(0);
-        dialogHelper.clickOk();
-
-        assertThat(mainPage.getCountOfShoppingLists(), is(0));
+        assertThat(itemsCount, is(1));
+        assertThat(pages.getMainPage().getCountOfShoppingLists(), is(0));
     }
 }

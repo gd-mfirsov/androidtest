@@ -1,6 +1,5 @@
 package pages;
 
-import io.appium.java_client.AppiumDriver;
 import io.appium.java_client.pagefactory.AndroidFindBy;
 import io.qameta.allure.Step;
 import org.openqa.selenium.By;
@@ -9,8 +8,8 @@ import org.openqa.selenium.WebElement;
 import java.util.List;
 
 public class MainPage extends AbstractPage{
-    public MainPage(AppiumDriver driver) {
-        super(driver);
+    public MainPage() {
+        super();
     }
 
     @AndroidFindBy(id = "com.slava.buylist:id/button2")
@@ -21,32 +20,37 @@ public class MainPage extends AbstractPage{
     private List<WebElement> shoppingLists;
 
     @Step
-    public void addNewBuyList(String buyListName) {
+    public MainPage addNewBuyList(String buyListName) {
         waitForVisibility(textBox);
         textBox.click();
         textBox.sendKeys(buyListName);
         addNew.click();
+        return this;
     }
 
     @Step
-    public void clickOnSpecifiedShoppingList(String shoppingListName) {
+    public MainPage clickOnSpecifiedShoppingList(String shoppingListName) {
         shoppingLists.stream().filter(sh -> sh.findElement(By.id("com.slava.buylist:id/title"))
                 .getText().equals(shoppingListName)).findFirst().ifPresent(WebElement::click);
+        return this;
     }
 
     @Step
-    public void clickOnShoppingListByIndex(int index) {
+    public MainPage clickOnShoppingListByIndex(int index) {
         shoppingLists.get(index).click();
+        return this;
     }
 
     @Step
-    public void removeShoppingListByIndex(int index) {
+    public MainPage removeShoppingListByIndex(int index) {
         shoppingLists.get(index).findElement(By.id("com.slava.buylist:id/imageView1")).click();
+        return this;
     }
 
     @Step
-    public void editShoppingListByIndex(int index) {
+    public MainPage editShoppingListByIndex(int index) {
         shoppingLists.get(index).findElement(By.id("com.slava.buylist:id/imageView2")).click();
+        return this;
     }
 
     @Step
